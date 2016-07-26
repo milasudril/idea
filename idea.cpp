@@ -15,7 +15,7 @@ int main(int argc,char** argv)
 	{
 	QApplication app(argc,argv);
 	Idea::Project_TreeView proj_tree;
-	Idea::Project proj(".");
+	Idea::Project proj(".",proj_tree);
 	proj.viewAttach(proj_tree);
 
 	return app.exec();

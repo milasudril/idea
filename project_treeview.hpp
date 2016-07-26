@@ -6,13 +6,13 @@
 #ifndef IDEA_PROJECT_TREEVIEW_HPP
 #define IDEA_PROJECT_TREEVIEW_HPP
 
-#include "project_view.hpp"
+#include "project.hpp"
 #include <memory>
 
 namespace Idea
 	{
 	class Project;
-	class Project_TreeView:public Project_View
+	class Project_TreeView:public Project::View
 		{
 		public:
 			class EventHandler
@@ -24,7 +24,8 @@ namespace Idea
 			Project_TreeView();
 			~Project_TreeView();
 
-			Project_View& projectSet(Project& project);
+			Project_TreeView& projectSet(Project& project);
+			Project_TreeView& documentCurrentSet(Project& project);
 
 		private:
 			struct Impl;

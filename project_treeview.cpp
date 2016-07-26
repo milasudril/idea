@@ -7,7 +7,6 @@
 //@	}
 
 #include "project_treeview.hpp"
-#include "project.hpp"
 
 #include <QPushButton>
 #include <QFileSystemModel>
@@ -44,8 +43,13 @@ Project_TreeView::Project_TreeView():m_impl(new Project_TreeView::Impl)
 
 Project_TreeView::~Project_TreeView(){}
 
-Project_View& Project_TreeView::projectSet(Project& project)
+Project_TreeView& Project_TreeView::projectSet(Project& project)
 	{
 	m_impl->rootSet(project.rootGet());
+	return *this;
+	}
+
+Project_TreeView& Project_TreeView::documentCurrentSet(Project& project)
+	{
 	return *this;
 	}
