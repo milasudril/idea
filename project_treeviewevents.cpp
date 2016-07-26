@@ -1,9 +1,12 @@
 //@	{"targets":[{"name":"project_treeviewevents.o","type":"object"}]}
 
-#ifndef IDEA_PROJECT_TREEVIEWEVENTS_HPP
-#define IDEA_PROJECT_TREEVIEWEVENTS_HPP
-
 #include "project_treeviewevents.hpp"
 #include "project.hpp"
 
-#endif
+using namespace Idea;
+
+void Project_TreeViewEvents::itemSelected(const Project_TreeView& view)
+	{
+	auto item=view.itemSelectedGet();
+	printf("Item selected %s %s %d\n",item.in_dir,item.name,item.is_dir);
+	}

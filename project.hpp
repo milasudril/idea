@@ -12,7 +12,6 @@
 
 namespace Idea
 	{
-	class Project_View;
 	class Document;
 	class Project:public Document::Monitor
 		{

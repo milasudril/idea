@@ -12,7 +12,8 @@ namespace Idea
 	{
 	class Project_TreeViewEvents:public Project_TreeView::EventHandler
 		{
-
+		public:
+			void itemSelected(const Project_TreeView& view);
 		};
 	}
 
