@@ -23,6 +23,13 @@ namespace Idea
 					virtual void documentCreated(Document&& document_new)=0;
 				};
 
+			class View
+				{
+				public:
+					virtual View& documentSet(Document& document)=0;
+					virtual Document& documentGet() const noexcept=0;
+				};
+
 			Document(const char* filename,Monitor& monitor);
 
 			bool dirtyIs() const noexcept
@@ -33,7 +40,7 @@ namespace Idea
 			const char* filenameGet() const noexcept
 				{return m_filename.c_str();}
 
-			Document& contentSet(const uint8_t* ptr_data,size_t length);
+			Document& contentSet(const uint8_t* ptr_data,size_t n);
 
 			const uint8_t* begin() const noexcept
 				{return m_content.data();}

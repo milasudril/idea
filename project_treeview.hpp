@@ -7,7 +7,10 @@
 #define IDEA_PROJECT_TREEVIEW_HPP
 
 #include "project.hpp"
+#include "document.hpp"
 #include <memory>
+
+class QWidget;
 
 namespace Idea
 	{
@@ -28,13 +31,17 @@ namespace Idea
 					virtual void itemSelected(const Project_TreeView& view)=0;
 				};
 
-			Project_TreeView(EventHandler& event_handler);
+			Project_TreeView(QWidget& parent,EventHandler& event_handler);
 			~Project_TreeView();
 
 			Project_TreeView& projectSet(Project& project);
+			Project& projectGet() const;
 			Project_TreeView& documentCurrentSet(Project& project);
+			Project_TreeView& documentViewAttach(Document::View& view);
 
 			Item itemSelectedGet() const noexcept;
+
+			QWidget* widget();
 
 		private:
 			struct Impl;

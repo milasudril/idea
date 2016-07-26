@@ -66,11 +66,16 @@ void Document::contentSave()
 	r_monitor->statusChanged(*this);
 	}
 
-Document& Document::contentSet(const uint8_t* ptr_data,size_t length)
+Document& Document::contentSet(const uint8_t* ptr_data,size_t n)
 	{
+	if(n==length())
+		{
+		if(memcmp(ptr_data,begin(),length())==0)
+			{return *this;}
+		}
 	m_content.clear();
-	m_content.resize(length);
-	memcpy(m_content.data(),ptr_data,length);
+	m_content.resize(n);
+	memcpy(m_content.data(),ptr_data,n);
 	m_dirty=1;
 	r_monitor->statusChanged(*this);
 	return *this;

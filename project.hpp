@@ -21,6 +21,7 @@ namespace Idea
 				public:
 					virtual View& projectSet(Project& project)=0;
 					virtual View& documentCurrentSet(Project& project)=0;
+					virtual Project& projectGet() const=0;
 				};
 
 			Project(const char* project_root,View& view);
