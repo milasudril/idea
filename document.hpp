@@ -21,6 +21,7 @@ namespace Idea
 					virtual void statusChanged(const Document& document)=0;
 					virtual void filenameChanged(const Document& document,const char* filename_old)=0;
 					virtual void documentCreated(Document&& document_new)=0;
+					virtual void documentRemoved(Document& document)=0;
 				};
 
 			class View
@@ -30,17 +31,38 @@ namespace Idea
 					virtual Document& documentGet() const noexcept=0;
 				};
 
+			struct Selection
+				{
+				int line_from;
+				int index_from;
+				int line_to;
+				int index_to;
+				};
+
 			Document(const char* filename,Monitor& monitor);
+
+			void remove();
+			
+			void reload();
 
 			bool dirtyIs() const noexcept
 				{return m_dirty;}
 
-			Document& filenameSet(const char* filename_new);
+			void filenameSet(const char* filename_new);
 
 			const char* filenameGet() const noexcept
 				{return m_filename.c_str();}
 
 			Document& contentSet(const uint8_t* ptr_data,size_t n);
+
+			Document& selectionSet(const Selection& sel) noexcept
+				{
+				m_sel=sel;
+				return *this;
+				}
+
+			const Selection& selectionGet() const noexcept
+				{return m_sel;}
 
 			const uint8_t* begin() const noexcept
 				{return m_content.data();}
@@ -54,19 +76,15 @@ namespace Idea
 
 			void contentSave();
 
-			/**Create a copy of current document, rename current document, and
-			 * save it.
-			*/
 			void contentSaveAs(const char* filename_new);
 
-			/**Create a copy of current document, and rename and save the copy.
-			*/
 			void contentSaveCopy(const char* filename_new);
 
 		private:
 			Monitor* r_monitor;
 			std::string m_filename;
 			std::vector<uint8_t> m_content;
+			Selection m_sel;
 			bool m_dirty;
 		};
 	}

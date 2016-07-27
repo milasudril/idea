@@ -1,6 +1,9 @@
 //@	{"targets":[{"name":"project.o","type":"object"}]}
 
 #include "project.hpp"
+#include <cassert>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace Idea;
 
@@ -17,9 +20,9 @@ Project& Project::documentCreate(const char* filename)
 	auto i=m_documents.find(key);
 	if(i==m_documents.end())
 		{
-		auto ip=m_documents.insert({std::move(key),Document(filename,*this)});
-		documentCurrentSet(ip.first->second);
+		i=m_documents.insert({std::move(key),Document(filename,*this)}).first;
 		}
+	documentCurrentSet(i->second);
 	return *this;
 	}
 
@@ -60,18 +63,17 @@ void Project::filenameChanged(const Document& document,const char* filename_old)
 	auto key=std::string(document.filenameGet());
 	if(key!=filename_old)
 		{
-		auto i_old=m_documents.find(std::string(filename_old));
-		auto doc_deleted=&i_old->second;
-		m_documents.erase(i_old);
-
 		auto i=m_documents.find(key);
 		if(i==m_documents.end())
-			{m_documents.insert({key,document});}
+			{i=m_documents.insert({key,document}).first;}
 		else
 			{i->second=document;}
 
+		auto i_old=m_documents.find(std::string(filename_old));
+		auto doc_deleted=&i_old->second;
 		if(doc_deleted==r_doc_current)
 			{documentCurrentSet(i->second);}
+		m_documents.erase(i_old);
 		}
 	}
 
@@ -88,5 +90,38 @@ void Project::documentCreated(Document&& document_new)
 		i->second=std::move(document_new);
 		documentCurrentSet(i->second);
 		}
+	}
 
+void Project::documentRemoved(Document& document)
+	{
+	auto key=std::string(document.filenameGet());
+		{
+		auto i=m_documents.find(std::string(""));
+		assert(i!=m_documents.end());
+		documentCurrentSet(i->second);
+		}
+
+		{
+		auto i=m_documents.find(key);
+		m_documents.erase(i);
+		}
+	}
+
+Project& Project::directoryCreate(const char* name)
+	{
+	mkdir(name,S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
+	return *this;
+	}
+
+void Project::directoryRemove(const char* name)
+	{
+	rmdir(name);
+	}
+
+void Project::fileRemove(const char* name)
+	{
+	auto key=std::string(name);
+	auto i=m_documents.find(key);
+	if(i!=m_documents.end())
+		{i->second.remove();}
 	}

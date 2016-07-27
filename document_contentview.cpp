@@ -19,6 +19,8 @@
 #include <QToolButton>
 #include <QApplication>
 #include <QFontDatabase>
+#include <QMessageBox>
+#include <QPushButton>
 
 using namespace Idea;
 
@@ -26,7 +28,7 @@ class Document_ContentView::Impl:public QWidget
 	{
 	public:
 		Impl(QWidget& parent):QWidget(&parent),r_document(nullptr)
-			,m_filename(this),m_save(this),m_delete(this),m_scintilla(this)
+			,m_filename(this),m_save(this),m_reload(this),m_delete(this),m_scintilla(this)
 			{
 			m_scintilla.setMarginLineNumbers(1,1);
 			m_scintilla.setFolding(QsciScintilla::CircledTreeFoldStyle);
@@ -35,10 +37,37 @@ class Document_ContentView::Impl:public QWidget
 			m_scintilla.setIndentationsUseTabs(1);
 			m_scintilla.setTabWidth(4);
 			m_scintilla.setIndentationGuides(1);
+			m_scintilla.setUtf8(1);
+
+			filenameCatchChangeEvent();
 			m_save.setText("⛁");
+			connect(&m_save,&QToolButton::clicked,[this](bool checked)
+				{
+				if(r_document!=nullptr)
+					{
+					documentCopy();
+					r_document->contentSave();
+					}
+				});
+
+			m_reload.setText("⟲");
+			connect(&m_reload,&QToolButton::clicked,[this](bool checked)
+				{
+				if(r_document!=nullptr)
+					{
+					r_document->reload();
+					auto doc_temp=r_document;
+					r_document=nullptr;
+					documentSet(*doc_temp);
+					}
+				});
+		
 			m_delete.setText("✗");
+			deleteCatchClicked();
+
 			m_toolbar.addWidget(&m_filename);
 			m_toolbar.addWidget(&m_save);
+			m_toolbar.addWidget(&m_reload);
 			m_toolbar.addWidget(&m_delete);
 			m_toolbar.setMargin(0);
 			m_toolbar.setSpacing(2);
@@ -48,32 +77,29 @@ class Document_ContentView::Impl:public QWidget
 			setLayout(&m_box);
 			m_lexer=nullptr;
 			}
-
+//👓🔎
 		~Impl()
 			{delete m_lexer;}
 
 		void documentSet(Document& document)
 			{
 			if(r_document!=nullptr)
-				{
-				auto swap=m_scintilla.text().toUtf8();
-				r_document->contentSet(reinterpret_cast<const uint8_t*>(swap.constData())
-					,swap.size());
-				}
+				{documentCopy();}
 
 			r_document=&document;
 			QByteArray tmp(reinterpret_cast<const char*>(r_document->begin())
 				,r_document->length());
-			m_scintilla.setText(QString::fromUtf8(tmp));
+			m_scintilla.setText(tmp);
+			auto sel=r_document->selectionGet();
+			m_scintilla.setSelection(sel.line_from,sel.index_from,sel.line_to,sel.index_to);
 
-			auto pos=strrchr(document.filenameGet(),'.');
+			auto pos=strrchr(r_document->filenameGet(),'.');
 			if(pos!=NULL)
 				{
 				if(strcmp(pos,".cpp")==0 || strcmp(pos,".hpp")==0)
 					{
 					delete m_lexer;
 					m_lexer=new QsciLexerCPP;
-
 					}
 				else
 				if(strcmp(pos,".json")==0 || strcmp(pos,".js")==0)
@@ -81,7 +107,8 @@ class Document_ContentView::Impl:public QWidget
 					delete m_lexer;
 					m_lexer=new QsciLexerJavaScript;
 					}
-				m_lexer->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont),-1);
+				if(m_lexer!=nullptr)
+					{m_lexer->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont),-1);}
 				m_scintilla.setLexer(m_lexer);
 				}
 			m_filename.setText(r_document->filenameGet());
@@ -99,9 +126,87 @@ class Document_ContentView::Impl:public QWidget
 		QHBoxLayout m_toolbar;
 		QLineEdit m_filename;
 		QToolButton m_save;
+		QToolButton m_reload;
 		QToolButton m_delete;
 		QsciScintilla m_scintilla;
 		QsciLexer* m_lexer;
+
+		void documentCopy()
+			{
+			auto swap=m_scintilla.text().toUtf8();
+			r_document->contentSet(reinterpret_cast<const uint8_t*>(swap.constData())
+				,swap.size());
+			Document::Selection sel;
+			m_scintilla.getSelection(&sel.line_from,&sel.index_from
+				,&sel.line_to,&sel.index_to);
+			r_document->selectionSet(sel);
+			}
+
+		void filenameCatchChangeEvent()
+			{
+			connect(&m_filename,&QLineEdit::editingFinished,[this]()
+				{
+				if(r_document==nullptr)
+					{return;}
+				documentCopy();
+				auto filename=m_filename.text().toUtf8();
+				if(filename.size()!=0 && r_document->filenameGet()!=filename)
+					{
+					if(*( r_document->filenameGet() )=='\0')
+						{
+						r_document->contentSaveAs(filename.constData());
+						return;
+						}
+
+					QMessageBox msgbox(this);
+					msgbox.setIcon(QMessageBox::Question);
+					msgbox.setWindowTitle("Filename change");
+					msgbox.setText("The filename was edited. Pick an action.");
+					auto rename=msgbox.addButton("Rename",QMessageBox::ActionRole);
+					auto saveas=msgbox.addButton("Save as",QMessageBox::ActionRole);
+					auto savecopy=msgbox.addButton("Save a copy",QMessageBox::ActionRole);
+					msgbox.addButton(QMessageBox::Cancel);
+					msgbox.exec();
+
+					auto button_clicked=msgbox.clickedButton();
+					if(button_clicked==rename)
+						{r_document->filenameSet(filename.constData());}
+					else
+					if(button_clicked==saveas)
+						{r_document->contentSaveAs(filename.constData());}
+					else
+					if(button_clicked==savecopy)
+						{r_document->contentSaveCopy(filename.constData());}
+					}
+				});
+			}
+
+		void deleteCatchClicked()
+			{
+			connect(&m_delete,&QToolButton::clicked,[this](bool checked)
+				{
+				if(r_document!=nullptr)
+					{
+					if(*(r_document->filenameGet())!='\0')
+						{
+						QMessageBox msgbox(this);
+						msgbox.setWindowTitle("Deleting file");
+						QString str("Are you sure you want to delete ");
+						str+=r_document->filenameGet();
+						str+="?";
+						msgbox.setText(str);
+						msgbox.setIcon(QMessageBox::Warning);
+						msgbox.setStandardButtons(QMessageBox::Yes|QMessageBox::No);
+						if(msgbox.exec()==QMessageBox::Yes)
+							{
+							auto doc_current=r_document;
+							r_document=nullptr;
+							doc_current->remove();
+							}
+						}
+					}
+				});
+			}
 	};
 
 Document_ContentView::Document_ContentView(QWidget& parent):

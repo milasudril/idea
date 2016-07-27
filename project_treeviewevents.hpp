@@ -14,6 +14,9 @@ namespace Idea
 		{
 		public:
 			void itemSelected(const Project_TreeView& view);
+			void fileCreate(const Project_TreeView& view,const char* name);
+			void directoryCreate(const Project_TreeView& view,const char* name);
+			void itemDelete(const Project_TreeView& view);
 		};
 	}
 

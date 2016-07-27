@@ -31,26 +31,34 @@ static std::vector<uint8_t> fileLoad(const char* filename)
 	}
 
 Document::Document(const char* filename,Monitor& monitor):r_monitor(&monitor)
-,m_filename(filename),m_content(fileLoad(filename))
+,m_filename(filename)
 	{
-	m_dirty=0;
+	reload();
 	}
 
-Document& Document::filenameSet(const char* filename_new)
+void Document::filenameSet(const char* filename_new)
 	{
 	auto filename_old=m_filename;
 	if(m_filename!=filename_new)
 		{
+		if(m_filename.size()==0)
+			{
+			m_filename=std::string(filename_new);
+			contentSave();
+			r_monitor->filenameChanged(*this,"");
+			return;
+			}
 		contentSave();
-		if(rename(m_filename.c_str(),filename_new)!=0)
-			{m_filename=filename_new;}
+		if(rename(m_filename.c_str(),filename_new)==0)
+			{m_filename=std::string(filename_new);}
 		}
 	r_monitor->filenameChanged(*this,filename_old.c_str());
-	return *this;
 	}
 
 void Document::contentSave()
 	{
+	if(m_filename.size()==0)
+		{return;}
 	FileHandle f(fopen(m_filename.c_str(),"wb"),file_close);
 	auto x=f.get();
 	if(x==NULL)
@@ -84,19 +92,35 @@ Document& Document::contentSet(const uint8_t* ptr_data,size_t n)
 void Document::contentSaveAs(const char* filename_new)
 	{
 	Document doc_new(*this);
-//	FIXME This will not work if filenameSet failed.
-	filenameSet(filename_new);
-	contentSave();
+	doc_new.m_filename=filename_new;
 	doc_new.contentSave();
+	contentSave();
 	r_monitor->documentCreated(std::move(doc_new));
 	}
 
-/**Create a copy of current document, and rename and save the copy.
-*/
 void Document::contentSaveCopy(const char* filename_new)
 	{
 	Document doc_new(*this);
-	doc_new.filenameSet(filename_new);
 	doc_new.contentSave();
 	r_monitor->documentCreated(std::move(doc_new));
+	m_filename=filename_new;
+	contentSave();
+	}
+
+void Document::remove()
+	{
+	if(m_filename.size()!=0)
+		{
+		if(::remove(m_filename.c_str())==0)
+			{r_monitor->documentRemoved(*this);}
+		}
+	}
+
+void Document::reload()
+	{
+	m_content=fileLoad(m_filename.c_str());
+	m_sel={0,0,0,0};
+	m_dirty=0;
+	if(length()==0)
+		{contentSave();}
 	}

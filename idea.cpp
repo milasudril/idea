@@ -18,9 +18,10 @@
 int main(int argc,char** argv)
 	{
 	QApplication app(argc,argv);
+	QCoreApplication::setApplicationName("IDEa");
 
 	QWidget mainwin;
-	mainwin.resize(800,600);
+	mainwin.resize(1024,768);
 	QVBoxLayout vbox;
 	QSplitter hbox(&mainwin);
 
@@ -34,9 +35,11 @@ int main(int argc,char** argv)
 
 	hbox.addWidget(proj_tree.widget());
 	hbox.addWidget(v.widget());
+
 	hbox.setStretchFactor(0,0);
 	hbox.setStretchFactor(1,1);
 
+	vbox.setMargin(2);
 	vbox.addWidget(&hbox);
 
 	mainwin.setLayout(&vbox);

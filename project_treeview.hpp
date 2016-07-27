@@ -29,6 +29,9 @@ namespace Idea
 				{
 				public:
 					virtual void itemSelected(const Project_TreeView& view)=0;
+					virtual void fileCreate(const Project_TreeView& view,const char* name)=0;
+					virtual void directoryCreate(const Project_TreeView& view,const char* name)=0;
+					virtual void itemDelete(const Project_TreeView& view)=0;
 				};
 
 			Project_TreeView(QWidget& parent,EventHandler& event_handler);

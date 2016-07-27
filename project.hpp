@@ -43,8 +43,16 @@ namespace Idea
 
 			void documentCreated(Document&& document_new);
 
+			void documentRemoved(Document& document);
+
 			Document& documentCurrentGet() const noexcept
 				{return *r_doc_current;}
+
+			Project& directoryCreate(const char* name);
+
+			void directoryRemove(const char* name);
+
+			void fileRemove(const char* name);
 
 
 		private:
