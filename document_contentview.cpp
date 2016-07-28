@@ -13,6 +13,13 @@
 #include <Qsci/qsciscintilla.h>
 #include <Qsci/qscilexercpp.h>
 #include <Qsci/qscilexerjavascript.h>
+#include <Qsci/qscilexerbash.h>
+#include <Qsci/qscilexerbatch.h>
+#include <Qsci/qscilexercss.h>
+#include <Qsci/qscilexerhtml.h>
+#include <Qsci/qscilexermatlab.h>
+#include <Qsci/qscilexerpython.h>
+#include <Qsci/qscilexertex.h>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
@@ -28,7 +35,8 @@ class Document_ContentView::Impl:public QWidget
 	{
 	public:
 		Impl(QWidget& parent):QWidget(&parent),r_document(nullptr)
-			,m_filename(this),m_save(this),m_reload(this),m_delete(this),m_scintilla(this)
+			,m_filename(this),m_save(this),m_reload(this),m_delete(this)
+			,m_scintilla(this),m_lexer(nullptr)
 			{
 			m_scintilla.setMarginLineNumbers(1,1);
 			m_scintilla.setFolding(QsciScintilla::CircledTreeFoldStyle);
@@ -94,21 +102,51 @@ class Document_ContentView::Impl:public QWidget
 			m_scintilla.setSelection(sel.line_from,sel.index_from,sel.line_to,sel.index_to);
 
 			auto pos=strrchr(r_document->filenameGet(),'.');
+			m_scintilla.setWrapMode(QsciScintilla::WrapNone);
 			if(pos!=NULL)
 				{
+				delete m_lexer;
+				m_lexer=nullptr;
 				if(strcmp(pos,".cpp")==0 || strcmp(pos,".hpp")==0)
-					{
-					delete m_lexer;
-					m_lexer=new QsciLexerCPP;
-					}
+					{m_lexer=new QsciLexerCPP;}
 				else
 				if(strcmp(pos,".json")==0 || strcmp(pos,".js")==0)
+					{m_lexer=new QsciLexerJavaScript;}
+				else
+				if(strcmp(pos,".sh")==0)
+					{m_lexer=new QsciLexerBash;}
+				else
+				if(strcmp(pos,".bat")==0)
+					{m_lexer=new QsciLexerBatch;}
+				else
+				if(strcmp(pos,".css")==0)
+					{m_lexer=new QsciLexerCSS;}
+				else
+				if(strcmp(pos,".html")==0 || strcmp(pos,".htm")==0 || strcmp(pos,".xml")==0)
 					{
-					delete m_lexer;
-					m_lexer=new QsciLexerJavaScript;
+					m_lexer=new QsciLexerHTML;
+					m_scintilla.setWrapMode(QsciScintilla::WrapWord);
 					}
+				else
+				if(strcmp(pos,".md")==0)
+					{m_scintilla.setWrapMode(QsciScintilla::WrapWord);}
+				else
+				if(strcmp(pos,".m")==0)
+					{m_lexer=new QsciLexerMatlab;}
+				else
+				if(strcmp(pos,".py")==0)
+					{m_lexer=new QsciLexerPython;}
+				else
+				if(strcmp(pos,".tex")==0)
+					{
+					m_lexer=new QsciLexerTeX;
+					m_scintilla.setWrapMode(QsciScintilla::WrapWord);
+					}
+
 				if(m_lexer!=nullptr)
 					{m_lexer->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont),-1);}
+				else
+					{m_scintilla.setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));}
 				m_scintilla.setLexer(m_lexer);
 				}
 			m_filename.setText(r_document->filenameGet());
@@ -144,7 +182,7 @@ class Document_ContentView::Impl:public QWidget
 
 		void filenameCatchChangeEvent()
 			{
-			connect(&m_filename,&QLineEdit::editingFinished,[this]()
+			connect(&m_filename,&QLineEdit::returnPressed,[this]()
 				{
 				if(r_document==nullptr)
 					{return;}
@@ -177,6 +215,8 @@ class Document_ContentView::Impl:public QWidget
 					else
 					if(button_clicked==savecopy)
 						{r_document->contentSaveCopy(filename.constData());}
+					else
+						{m_filename.setText(r_document->filenameGet());}
 					}
 				});
 			}

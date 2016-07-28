@@ -32,6 +32,7 @@ namespace Idea
 					virtual void fileCreate(const Project_TreeView& view,const char* name)=0;
 					virtual void directoryCreate(const Project_TreeView& view,const char* name)=0;
 					virtual void itemDelete(const Project_TreeView& view)=0;
+					virtual void itemDeleted(const Project_TreeView& view,const Item& item)=0;
 				};
 
 			Project_TreeView(QWidget& parent,EventHandler& event_handler);

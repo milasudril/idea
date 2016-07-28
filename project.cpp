@@ -125,3 +125,31 @@ void Project::fileRemove(const char* name)
 	if(i!=m_documents.end())
 		{i->second.remove();}
 	}
+
+void Project::documentRemoved(const char* name)
+	{
+	auto key=std::string(name);
+	auto i=m_documents.find(key);
+	if(i!=m_documents.end())
+		{
+		if(&i->second==r_doc_current)
+			{
+			auto i_empty=m_documents.find(std::string(""));
+			assert(i_empty!=m_documents.end());
+			documentCurrentSet(i_empty->second);
+			}
+		m_documents.erase(i);
+		}
+	}
+
+void Project::documentsSave()
+	{
+	auto i=m_documents.begin();
+	auto i_end=m_documents.end();
+	while(i!=i_end)
+		{
+		if(i->second.dirtyIs())
+			{i->second.contentSave();}
+		++i;
+		}
+	}

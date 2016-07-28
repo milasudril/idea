@@ -46,3 +46,10 @@ void Project_TreeViewEvents::itemDelete(const Project_TreeView& view)
 	else
 		{view.projectGet().fileRemove(item.name);}
 	}
+void Project_TreeViewEvents::itemDeleted(const Project_TreeView& view,const Project_TreeView::Item& item)
+	{
+	if(!item.is_dir)
+		{
+		view.projectGet().documentRemoved(item.name);
+		}
+	}

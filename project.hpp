@@ -54,6 +54,9 @@ namespace Idea
 
 			void fileRemove(const char* name);
 
+			void documentRemoved(const char* name);
+
+			void documentsSave();
 
 		private:
 			std::string m_root;

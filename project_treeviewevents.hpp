@@ -17,6 +17,7 @@ namespace Idea
 			void fileCreate(const Project_TreeView& view,const char* name);
 			void directoryCreate(const Project_TreeView& view,const char* name);
 			void itemDelete(const Project_TreeView& view);
+			void itemDeleted(const Project_TreeView& view,const Project_TreeView::Item& item);
 		};
 	}
 

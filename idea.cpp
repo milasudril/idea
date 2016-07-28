@@ -45,5 +45,8 @@ int main(int argc,char** argv)
 	mainwin.setLayout(&vbox);
 	mainwin.show();
 
-	return app.exec();
+	auto ret=app.exec();
+	
+	proj.documentsSave();
+	return ret;
 	}

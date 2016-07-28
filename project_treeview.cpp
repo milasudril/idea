@@ -15,6 +15,8 @@
 #include <QVBoxLayout>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QToolButton>
+#include <QLineEdit>
 
 using namespace Idea;
 
@@ -23,16 +25,24 @@ class Project_TreeView::Impl:public QWidget
 	public:
 		Impl(QWidget& parent,EventHandler& event_handler,Project_TreeView& owner):
 			QWidget(&parent),m_tree(this),m_newfile(this),m_newdir(this),m_rm(this)
+			,m_searchtext(this),m_go(this)
 			,r_owner(owner)
 			,r_event_handler(&event_handler),r_doc_view(nullptr)
 			{
+			m_go.setText("➟");
+			m_searchbox.addWidget(&m_searchtext);
+			m_searchbox.addWidget(&m_go);
+			m_searchbox.setMargin(0);
+			m_searchbox.setSpacing(2);
+			m_box.addLayout(&m_searchbox);
+
 			m_tree.setModel(&m_fs);
 			m_tree.setHeaderHidden(1);
 			m_tree.header()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
 			m_box.addWidget(&m_tree);
 			m_box.setMargin(4);
-			m_newfile.setText("✚📄");
-			m_newdir.setText("✚📁");
+			m_newfile.setText("➕📄");
+			m_newdir.setText("➕📁");
 			m_rm.setText("✗");
 			m_projman.addWidget(&m_newfile);
 			m_projman.addWidget(&m_newdir);
@@ -41,18 +51,44 @@ class Project_TreeView::Impl:public QWidget
 			setLayout(&m_box);
 
 		//	If no item is selected, use the project root directory as selected item.
-			m_isdir=1;
+			m_selection.isdir=1;
+
+			connect(&m_go,&QToolButton::clicked,[this](bool checked)
+				{
+				if(r_project!=nullptr)
+					{r_project->documentCurrentSet(m_searchtext.text().toUtf8().constData());}
+				});
+
+			connect(&m_searchtext,&QLineEdit::returnPressed,[this]()
+				{
+				if(r_project!=nullptr)
+					{r_project->documentCurrentSet(m_searchtext.text().toUtf8().constData());}
+				});
+
 
 			connect(m_tree.selectionModel(),&QItemSelectionModel::selectionChanged
 				,[this](const QItemSelection& sel_new,const QItemSelection& sel_old)
 					{
-					auto fileinfo=m_fs.fileInfo(sel_new.indexes().first());
-					auto in_dir_full=QDir(m_fs.rootDirectory());
-					m_dir=in_dir_full.relativeFilePath( fileinfo.absolutePath() ).toLocal8Bit();
-					m_filename=in_dir_full.relativeFilePath(fileinfo.absoluteFilePath()).toLocal8Bit();
-					m_isdir=fileinfo.isDir();
+					m_selection=itemGet(sel_new.indexes().first());
 					r_event_handler->itemSelected(r_owner);
 					});
+
+			connect(&m_fs,&QAbstractItemModel::rowsAboutToBeRemoved,[this](const QModelIndex& parent
+				,int first,int last)
+				{
+				while(first<=last)
+					{
+					auto item_internal=itemGet(parent.child(first,0));
+					Item item
+						{
+						 item_internal.dir.constData()
+						,item_internal.filename.constData()
+						,item_internal.isdir
+						};
+					r_event_handler->itemDeleted(r_owner,item);
+					++first;
+					}
+				});
 
 			connect(&m_newfile,&QPushButton::clicked,[this](bool selected)
 				{
@@ -78,12 +114,12 @@ class Project_TreeView::Impl:public QWidget
 
 			connect(&m_rm,&QPushButton::clicked,[this](bool selected)
 				{
-				if(m_filename.size()!=0)
+				if(m_selection.filename.size()!=0)
 					{
 					QMessageBox msgbox(this);
 					msgbox.setWindowTitle("Deleting item");
 					QString str("Are you sure you want to delete ");
-					str+=m_filename;
+					str+=m_selection.filename;
 					str+="?";
 
 					msgbox.setText(str);
@@ -110,7 +146,12 @@ class Project_TreeView::Impl:public QWidget
 
 		Item itemSelectedGet() const noexcept
 			{
-			return {m_dir.constData(),m_filename.constData(),m_isdir};
+			return 
+				{
+				 m_selection.dir.constData()
+				,m_selection.filename.constData()
+				,m_selection.isdir
+				};
 			}
 
 		QWidget* widget() noexcept
@@ -124,7 +165,6 @@ class Project_TreeView::Impl:public QWidget
 
 		void documentCurrentSet(Project& proj)
 			{
-			
 			auto& doc=proj.documentCurrentGet();
 			if(r_doc_view!=nullptr)
 				{r_doc_view->documentSet(doc);}
@@ -138,7 +178,10 @@ class Project_TreeView::Impl:public QWidget
 			QSignalBlocker blocker(selection);
 			if(selection->hasSelection())
 				{selection->clearSelection();}
-			selection->select(QItemSelection(index_a,index_b),QItemSelectionModel::Select);
+			auto sel_new=QItemSelection(index_a,index_b);
+			selection->select(sel_new,QItemSelectionModel::Select);
+			if(!sel_new.indexes().empty())
+				{m_selection=itemGet(sel_new.indexes().first());}
 			}
 
 	private:
@@ -149,12 +192,29 @@ class Project_TreeView::Impl:public QWidget
 		QPushButton m_newfile;
 		QPushButton m_newdir;
 		QPushButton m_rm;
+		QHBoxLayout m_searchbox;
+		QLineEdit m_searchtext;
+		QToolButton m_go;
 
-
-	//	Properties about selected item
-		QByteArray m_dir;
-		QByteArray m_filename;
-		bool m_isdir;
+		struct ItemInternal
+			{
+			QByteArray dir;
+			QByteArray filename;
+			bool isdir;
+			};
+		ItemInternal m_selection;
+	
+		ItemInternal itemGet(const QModelIndex& model)
+			{
+			auto fileinfo=m_fs.fileInfo(model);
+			auto in_dir_full=QDir(m_fs.rootDirectory());			
+			return 
+				{
+				 in_dir_full.relativeFilePath( fileinfo.absolutePath() ).toLocal8Bit()
+				,in_dir_full.relativeFilePath(fileinfo.absoluteFilePath()).toLocal8Bit()
+				,fileinfo.isDir()
+				};
+			}
 
 		Project_TreeView& r_owner;
 		EventHandler* r_event_handler;
