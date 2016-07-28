@@ -1,7 +1,11 @@
-IDEa--I got an iDEA
+IDEa--Idea got an iDEa
 ===================
 
 This is some sort of IDE build using Qt5 and QScintilla.
+
+Design goal
+-----------
+Avoid cluttering the screen with panels. The file browser and editor are the most important things. However, I expect one more toolbar for managing current project
 
 TODO:s
 ------
