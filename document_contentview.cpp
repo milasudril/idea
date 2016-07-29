@@ -95,6 +95,48 @@ class Document_ContentView::Impl:public QWidget
 				{documentCopy();}
 
 			r_document=&document;
+
+			m_scintilla.hide();
+			if(r_document->textfileIs())
+				{scintillaConfig();}
+				
+			m_filename.setText(r_document->filenameGet());
+			}
+
+		Document& documentGet() const noexcept
+			{return *r_document;}
+
+		QWidget* widget() noexcept
+			{return this;}
+
+			bool textfileIs() const noexcept;
+	private:
+		Document* r_document;
+		QVBoxLayout m_box;
+		QHBoxLayout m_toolbar;
+		QLineEdit m_filename;
+		QToolButton m_save;
+		QToolButton m_reload;
+		QToolButton m_delete;
+		QsciScintilla m_scintilla;
+		QsciLexer* m_lexer;
+
+		void documentCopy()
+			{
+			if(r_document->textfileIs())
+				{
+				auto swap=m_scintilla.text().toUtf8();
+				r_document->contentSet(reinterpret_cast<const uint8_t*>(swap.constData())
+					,swap.size());
+				Document::Selection sel;
+				m_scintilla.getSelection(&sel.line_from,&sel.index_from
+					,&sel.line_to,&sel.index_to);
+				r_document->selectionSet(sel);
+				}
+			}
+
+		void scintillaConfig()
+			{
 			QByteArray tmp(reinterpret_cast<const char*>(r_document->begin())
 				,r_document->length());
 			m_scintilla.setText(tmp);
@@ -103,6 +145,7 @@ class Document_ContentView::Impl:public QWidget
 
 			auto pos=strrchr(r_document->filenameGet(),'.');
 			m_scintilla.setWrapMode(QsciScintilla::WrapNone);
+			m_scintilla.show();
 			if(pos!=NULL)
 				{
 				delete m_lexer;
@@ -149,35 +192,6 @@ class Document_ContentView::Impl:public QWidget
 					{m_scintilla.setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));}
 				m_scintilla.setLexer(m_lexer);
 				}
-			m_filename.setText(r_document->filenameGet());
-			}
-
-		Document& documentGet() const noexcept
-			{return *r_document;}
-
-		QWidget* widget() noexcept
-			{return this;}
-
-	private:
-		Document* r_document;
-		QVBoxLayout m_box;
-		QHBoxLayout m_toolbar;
-		QLineEdit m_filename;
-		QToolButton m_save;
-		QToolButton m_reload;
-		QToolButton m_delete;
-		QsciScintilla m_scintilla;
-		QsciLexer* m_lexer;
-
-		void documentCopy()
-			{
-			auto swap=m_scintilla.text().toUtf8();
-			r_document->contentSet(reinterpret_cast<const uint8_t*>(swap.constData())
-				,swap.size());
-			Document::Selection sel;
-			m_scintilla.getSelection(&sel.line_from,&sel.index_from
-				,&sel.line_to,&sel.index_to);
-			r_document->selectionSet(sel);
 			}
 
 		void filenameCatchChangeEvent()

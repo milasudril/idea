@@ -1,6 +1,7 @@
 //@	{"targets":[{"name":"document.o","type":"object"}]}
 
 #include "document.hpp"
+#include "utf8decoder.hpp"
 #include <cstdio>
 #include <memory>
 #include <cstring>
@@ -123,4 +124,18 @@ void Document::reload()
 	m_dirty=0;
 	if(length()==0)
 		{contentSave();}
+	}
+
+
+bool Document::textfileIs() const noexcept
+	{
+	UTF8Decoder decoder(begin(),end());
+	uint32_t codepoint=0;
+	while(!decoder.done())
+		{
+		auto status=decoder.codepointGet(codepoint);
+		if(!status || codepoint==0)
+			{return 0;}
+		}
+	return 1;
 	}

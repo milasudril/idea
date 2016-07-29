@@ -80,6 +80,8 @@ namespace Idea
 
 			void contentSaveCopy(const char* filename_new);
 
+			bool textfileIs() const noexcept;
+
 		private:
 			Monitor* r_monitor;
 			std::string m_filename;

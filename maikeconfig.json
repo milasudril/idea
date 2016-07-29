@@ -29,7 +29,7 @@
                     ],
                     "name":"g++"
                 },
-                "cflags_extra":[],
+                "cflags_extra":["Werror"],
                 "cflags_format":"-^",
                 "cxxversion_max":-1,
                 "cxxversion_min":201103,
