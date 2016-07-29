@@ -1,5 +1,5 @@
 IDEa--Idea got an iDEa
-===================
+======================
 
 This is some sort of IDE build using Qt5 and QScintilla.
 

@@ -28,6 +28,8 @@
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QPixmap>
+#include <QLabel>
 
 using namespace Idea;
 
@@ -36,7 +38,7 @@ class Document_ContentView::Impl:public QWidget
 	public:
 		Impl(QWidget& parent):QWidget(&parent),r_document(nullptr)
 			,m_filename(this),m_save(this),m_reload(this),m_delete(this)
-			,m_scintilla(this),m_lexer(nullptr)
+			,m_scintilla(this),m_lexer(nullptr),m_pixview(this)
 			{
 			m_scintilla.setMarginLineNumbers(1,1);
 			m_scintilla.setFolding(QsciScintilla::CircledTreeFoldStyle);
@@ -81,6 +83,7 @@ class Document_ContentView::Impl:public QWidget
 			m_toolbar.setSpacing(2);
 			m_box.addLayout(&m_toolbar);
 			m_box.addWidget(&m_scintilla);
+			r_view_current=&m_scintilla;
 			m_box.setMargin(4);
 			setLayout(&m_box);
 			m_lexer=nullptr;
@@ -96,10 +99,29 @@ class Document_ContentView::Impl:public QWidget
 
 			r_document=&document;
 
-			m_scintilla.hide();
+		//	Choose widget depending on the document content.
+		//	This simplistic solution works fine for two kinds (here: text, and image)
+		//	Do not add more document types unless a vtable dispatch is introduced
+			if(r_view_current!=nullptr)
+				{
+				r_view_current->hide();
+				m_box.removeWidget(r_view_current);
+				r_view_current=nullptr;
+				}
 			if(r_document->textfileIs())
-				{scintillaConfig();}
-				
+				{
+				scintillaConfig();
+				r_view_current=&m_scintilla;
+				}
+			else
+			if(pixviewConfig())
+				{r_view_current=&m_pixview;}
+			
+			if(r_view_current!=nullptr)
+				{
+				m_box.addWidget(r_view_current);
+				r_view_current->show();
+				}
 			m_filename.setText(r_document->filenameGet());
 			}
 
@@ -109,7 +131,6 @@ class Document_ContentView::Impl:public QWidget
 		QWidget* widget() noexcept
 			{return this;}
 
-			bool textfileIs() const noexcept;
 	private:
 		Document* r_document;
 		QVBoxLayout m_box;
@@ -120,6 +141,9 @@ class Document_ContentView::Impl:public QWidget
 		QToolButton m_delete;
 		QsciScintilla m_scintilla;
 		QsciLexer* m_lexer;
+		QLabel m_pixview;
+
+		QWidget* r_view_current;
 
 		void documentCopy()
 			{
@@ -135,6 +159,21 @@ class Document_ContentView::Impl:public QWidget
 				}
 			}
 
+		bool pixviewConfig()
+			{
+			QPixmap pixmap;
+			if(pixmap.loadFromData(r_document->begin(),r_document->length()))
+				{
+				m_pixview.setScaledContents(1);
+				m_pixview.setPixmap(pixmap);
+			//	m_pixview.setMinimumSize(QSize(0,0));
+				m_pixview.setSizePolicy(QSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored));
+			//	m_pixview.setContentType(QSizePolicy::DefaultType);
+				return 1;
+				}
+			return 0;
+			}
+
 		void scintillaConfig()
 			{
 			QByteArray tmp(reinterpret_cast<const char*>(r_document->begin())
@@ -145,7 +184,6 @@ class Document_ContentView::Impl:public QWidget
 
 			auto pos=strrchr(r_document->filenameGet(),'.');
 			m_scintilla.setWrapMode(QsciScintilla::WrapNone);
-			m_scintilla.show();
 			if(pos!=NULL)
 				{
 				delete m_lexer;
