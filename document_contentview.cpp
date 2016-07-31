@@ -20,6 +20,7 @@
 #include <Qsci/qscilexermatlab.h>
 #include <Qsci/qscilexerpython.h>
 #include <Qsci/qscilexertex.h>
+#include <Qsci/qscilexerxml.h>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
@@ -203,9 +204,16 @@ class Document_ContentView::Impl:public QWidget
 				if(strcmp(pos,".css")==0)
 					{m_lexer=new QsciLexerCSS;}
 				else
-				if(strcmp(pos,".html")==0 || strcmp(pos,".htm")==0 || strcmp(pos,".xml")==0)
+				if(strcmp(pos,".html")==0 || strcmp(pos,".htm")==0)
 					{
 					m_lexer=new QsciLexerHTML;
+					m_scintilla.setWrapMode(QsciScintilla::WrapWord);
+					}
+				else
+				if(strcmp(pos,".xml")==0 || strcmp(pos,".xsl")==0 ||
+					strcmp(pos,".xslt")==0 || strcmp(pos,".xsd")==0 )
+					{
+					m_lexer=new QsciLexerXML;
 					m_scintilla.setWrapMode(QsciScintilla::WrapWord);
 					}
 				else
