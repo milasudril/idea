@@ -189,7 +189,7 @@ class Document_ContentView::Impl:public QWidget
 				{
 				delete m_lexer;
 				m_lexer=nullptr;
-				if(strcmp(pos,".cpp")==0 || strcmp(pos,".hpp")
+				if(strcmp(pos,".cpp")==0 || strcmp(pos,".hpp")==0
 					|| strcmp(pos,".h")==0)
 					{m_lexer=new QsciLexerCPP;}
 				else
